@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#111827" />
   <title>Family Pickup Code</title>
-  <!-- CDN so we avoid builds on mobile -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -25,9 +24,10 @@
 
     const WORDS = "acorn,anchor,apricot,archer,arrow,artist,atlas,auto,avocado,bacon,badge,bagel,baker,balcony,balloon,banana,bandit,banker,barrel,baseball,basket,battery,beacon,beaver,beetle,bell,berry,bicycle,binder,birch,bison,blizzard,blossom,bluebird,boomer,boot,botany,brick,bridge,bronco,brook,bubble,bucket,buffalo,burgers,burrow,button,cabin,cactus,cadet,cafe,cake,camel,camera,candle,cannon,canoe,canyon,caper,caramel,caravan,carbon,cardinal,carpenter,carrot,castle,cedar,cello,cereal,chair,chalice,chalk,charger,cherry,cheddar,chef,chisel,chocolate,chorus,cider,circle,citrus,clover,cloud,clutch,cobalt,cocoon,coconut,coffee,comet,copper,cornbread,corset,cottage,cotton,cougar,cousin,coyote,cradle,crayon,cricket,crimson,crystal,cub,curfew,custard,daffodil,dahlia,daisy,damper,dagger,danube,daybreak,deadline,decoy,defender,denim,desert,dew,dewdrop,diamond,diner,discus,dock,dodger,donut,dragon,drawer,driftwood,drizzle,drum,duckling,ember,engine,elm,emperor,encore,espresso,evergreen,falcon,falconer,fennel,fern,festival,fig,finch,firefly,firewood,flannel,flamingo,flax,fleece,flicker,flute,foam,forest,forge,forklift,foxglove,fragment,frame,fritter,frost,furnace,gadget,galaxy,garlic,gazelle,geyser,gingerbread,giraffe,glacier,glider,gnome,goat,goblet,goldfinch,gondola,gooseberry,granite,grapefruit,griddle,griffin,grizzly,grouper,grove,guardian,guitar,gull,gust,hammer,harbor,hardhat,harvest,hawk,haystack,hedgehog,helm,heron,hickory,hinge,hippo,honey,honeybee,hood,hoof,horchata,horse,hotdog,hotel,huckleberry,hudson,hummingbird,husk,iceberg,iguana,ink,iris,iron,ivory,jade,jasmine,jasper,jellybean,jetty,journal,juniper,kaiser,keystone,kiln,kite,kiwi,koala,lagoon,lake,lantern,lasso,lavender,ledger,lemon,lemur,lichen,lilac,lime,linen,lion,lipstick,lizard,loaf,lobster,loft,logger,lotus,luck,lupine,lynx,macaroni,mackerel,magnet,mahogany,maize,mallet,maple,marble,marmot,marsh,meadow,melon,merlin,meteor,milkshake,miner,mittens,mocha,moose,moser,moss,mouse,muffin,mustang,myrtle,nacho,nanny,nectar,nettle,nightfall,nimbus,nutmeg,oak,oasis,obelisk,octave,octopus,olive,onyx,opal,orchid,oregano,oriole,otter,owl,oyster,paddle,paint,panther,parcel,parka,parsnip,parrot,parsley,peach,peanut,pebble,pelican,pepper,pesto,petal,phoenix,pickle,picnic,pigeon,pillar,pinecone,pintos,pioneer,pistachio,plankton,plaza,plover,plume,plum,poet,polecat,pollen,polo,pond,poppy,porsche,potato,pretzel,prospect,proton,pumpkin,quartz,quill,quince,quokka,quail,quarry,quiet,quiver,radish,railcar,rainbow,raisin,ranger,raspberry,ravine,redwood,reef,relay,rhino,ribbon,river,roadrunner,robin,rocket,rodeo,rogue,rosebud,rover,rowan,rumble,rye,saddle,saffron,sage,sailor,salmon,salsa,sandbar,sandstone,sapphire,satchel,scout,scrap,seagull,sequoia,sergeant,shamrock,shanty,shepherd,shipyard,shortcake,shovel,shuttle,silo,silver,sketch,skipper,skylark,slate,sluice,smokestack,snack,snowfall,soapstone,solar,sonar,spanner,sparrow,spice,spider,spruce,spur,squash,squirrel,stable,stag,staple,starfish,starlight,stetson,stingray,stove,strawberry,stream,sturgeon,studio,stump,sunbeam,sundae,sunrise,sunset,sunspot,surf,swallow,switch,tackle,taco,talc,tarpon,teak,teal,teapot,teaspoon,temple,tender,thimble,thistle,thunder,tiger,timber,toast,toboggan,tomato,topaz,torch,tractor,trail,trellis,trout,tulip,tumble,tundra,turmeric,turtle,twitter,umbra,umpire,uranium,urn,valley,vapor,velvet,venison,vertex,vessel,viking,vineyard,violin,violet,viper,vista,vulture,waffle,walnut,walrus,warbler,watchtower,wattle,wave,weasel,weather,web,whale,wharf,wheat,whisker,whistle,whitetail,willow,windmill,winter,wombat,woodland,workbench,wren,wrangler,yacht,yam,yarrow,yeti,yoke,yonder,zephyr,zest,zinnia".split(",");
 
-    async function generateDailyCode(secret, ymd) {
+    async function generateDailyCode(familyName, ymd) {
       const enc = new TextEncoder();
-      const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+      const keyData = enc.encode(familyName.toLowerCase());
+      const key = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
       const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(ymd)));
       const offset = sig[sig.length - 1] & 0x0f;
       const p = (sig[offset] & 0x7f) << 24 | (sig[offset+1] & 0xff) << 16 | (sig[offset+2] & 0xff) << 8 | (sig[offset+3] & 0xff);
@@ -49,17 +49,15 @@
 
       const [dateStr,setDateStr]=useState(()=>formatYMD(todayLocal()));
       const [familyName,setFamilyName]=useState(()=>getLS("fpc.familyName","Haidar"));
-      const [secret,setSecret]=useState(()=>getLS("fpc.secret","set-a-shared-secret-here"));
       const [contacts,setContacts]=useState(parseContacts);
       const [newContact,setNewContact]=useState({name:"", address:""});
       const [copyMsg,setCopyMsg]=useState("");
       const [code,setCode]=useState({digits:"------", word:"…"});
 
       useEffect(()=>setLS("fpc.familyName",familyName), [familyName]);
-      useEffect(()=>setLS("fpc.secret",secret), [secret]);
       useEffect(()=>{ try{ localStorage.setItem("fpc.contacts", JSON.stringify(contacts)); }catch{} }, [contacts]);
 
-      useEffect(()=>{ let cancelled=false; (async()=>{ const c=await generateDailyCode(secret,dateStr); if(!cancelled) setCode(c); })(); return ()=>{cancelled=true;} }, [secret,dateStr]);
+      useEffect(()=>{ let cancelled=false; (async()=>{ const c=await generateDailyCode(familyName,dateStr); if(!cancelled) setCode(c); })(); return ()=>{cancelled=true;} }, [familyName,dateStr]);
 
       const shareText = `${familyName} pickup code for ${dateStr}: ${code.digits} (${code.word}).\nShow this to school staff if asked.\nIf unsure, call the parent before releasing.`;
 
@@ -68,7 +66,7 @@
           <div className="max-w-3xl mx-auto">
             <header className="mb-6">
               <h1 className="text-3xl font-bold tracking-tight">Family Pickup Code</h1>
-              <p className="text-sm text-gray-600">Deterministic daily code from a shared secret. No server. Works offline.</p>
+              <p className="text-sm text-gray-600">Daily code based on family name. No server. Works offline.</p>
             </header>
 
             <section className="grid md:grid-cols-2 gap-6">
@@ -77,7 +75,7 @@
                 <div className="flex items-center gap-3 mb-2">
                   <label className="sr-only" htmlFor="date">Date</label>
                   <input id="date" className="w-full border rounded-xl px-3 py-2" value={dateStr} type="date" onChange={e=>setDateStr(e.target.value)} />
-                  <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(formatYMD(todayLocal()))} aria-label="Set to today">Today</button>
+                  <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(formatYMD(todayLocal()))}>Today</button>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(shiftYMD(dateStr,-1))}>Prev</button>
@@ -107,26 +105,16 @@
                 <h2 className="text-xl font-semibold mb-3">Family Settings</h2>
                 <label className="block text-sm mb-1" htmlFor="familyName">Family name</label>
                 <input id="familyName" className="w-full border rounded-xl px-3 py-2 mb-3" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
-                <label className="block text-sm mb-1" htmlFor="secret">Shared secret <span className="text-gray-500">(keep private; both parents must match)</span></label>
-                <input id="secret" className="w-full border rounded-xl px-3 py-2" type="password" value={secret} onChange={e=>setSecret(e.target.value)} />
-                <p className="text-xs text-gray-500 mt-2">Tip: set this once together, then use the string below to sync.</p>
-                <div className="mt-3 p-3 bg-gray-50 rounded-xl border flex items-center justify-between">
-                  <div className="text-sm">
-                    <div className="text-gray-600">Share secret with spouse:</div>
-                    <div className="font-mono text-xs break-all">{`family-secret:${secret}`}</div>
-                  </div>
-                  <button className="px-3 py-2 rounded-xl border" onClick={()=>navigator.clipboard.writeText(`family-secret:${secret}`).catch(()=>{})}>Copy</button>
-                </div>
+                <p className="text-xs text-gray-500">Both parents must use the exact same spelling to get matching codes.</p>
               </div>
             </section>
 
             <section className="mt-6 bg-white rounded-2xl shadow p-5">
               <h2 className="text-xl font-semibold mb-3">Safety Tips (show to the school)</h2>
               <ul className="list-disc pl-6 text-sm text-gray-700 space-y-2">
-                <li>Code changes daily at 12:01 AM based on the device’s local date. Both parents see the same code when the shared secret matches.</li>
+                <li>Code changes daily at 12:01 AM based on the device’s local date.</li>
                 <li>School should verify the code with the parent if the pickup person is new or the kid looks unsure.</li>
-                <li>Never say the secret out loud. The six-digit number and word are all staff need to confirm.</li>
-                <li>If a phone is offline, the app still works. Change the device date only if absolutely necessary.</li>
+                <li>The app works offline and doesn’t send or store personal data.</li>
               </ul>
             </section>
 
