@@ -1,70 +1,158 @@
-import React, { useEffect, useMemo, useState } from "react";
+<!doctype html>
 
-// Family Pickup Code App (Daily date follows America/Detroit; refreshable word; per‑day PIN lock 2587) // Notes: // - Date auto-tracks the America/Detroit calendar and rolls over at local midnight. // - You can refresh today's word any time UNTIL you lock it. Lock/unlock requires PIN 2587. // - Each day stores its own { word, locked } entry in localStorage under "fpc.words". // - Keeps things kid-friendly: generated words are short and pronounceable.
-
-const PIN_CODE = "2587"; // 4-digit code to lock/unlock const TZ = "America/Detroit";
-
-function getDetroitDateISO() { // Returns YYYY-MM-DD for America/Detroit const now = new Date(); // en-CA gives ISO-style YYYY-MM-DD return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now); }
-
-function readWordsStore() { try { return JSON.parse(localStorage.getItem("fpc.words") || "{}"); } catch { return {}; } }
-
-function writeWordsStore(store) { localStorage.setItem("fpc.words", JSON.stringify(store)); }
-
-// Simple, memorable word generator for kids function generateWord() { const partsA = ["sun", "map", "tree", "blue", "star", "rain", "cat", "dog", "nest", "milk", "book", "fish", "rock", "sand", "snow", "leaf", "truck", "train", "ball", "kite"]; const partsB = ["berry", "cake", "shine", "light", "house", "river", "stone", "song", "cloud", "spark", "path", "wind", "wheel", "field", "dock", "bridge", "gate", "trail", "lane", "way"]; const a = partsA[Math.floor(Math.random() * partsA.length)]; const b = partsB[Math.floor(Math.random() * partsB.length)]; // collapse accidental duplicates like "tree-tree" const w = (a === b ? a + "go" : a + b); return w.toLowerCase(); }
-
-export default function FamilyPickupCodeApp() { const [today, setToday] = useState(getDetroitDateISO()); const [word, setWord] = useState("..."); const [locked, setLocked] = useState(false);
-
-// Load today's record on mount and when date changes useEffect(() => { const store = readWordsStore(); if (!store[today]) { store[today] = { word: generateWord(), locked: false }; writeWordsStore(store); } setWord(store[today].word); setLocked(store[today].locked); }, [today]);
-
-// Tick every 30s to detect Detroit midnight rollover useEffect(() => { const id = setInterval(() => { const detroit = getDetroitDateISO(); if (detroit !== today) setToday(detroit); }, 30_000); return () => clearInterval(id); }, [today]);
-
-function refreshWord() { if (locked) return alert("Today's word is locked. Unlock with the PIN to change it."); const store = readWordsStore(); const next = generateWord(); store[today] = { word: next, locked: false }; writeWordsStore(store); setWord(next); }
-
-function lockToday() { if (locked) return alert("Already locked for today."); const input = window.prompt("Enter 4-digit PIN to lock today's word:"); if (input === null) return; // cancelled if (input.trim() !== PIN_CODE) return alert("Incorrect PIN."); const store = readWordsStore(); store[today] = { word, locked: true }; writeWordsStore(store); setLocked(true); alert("Locked for today."); }
-
-function unlockToday() { if (!locked) return alert("It's not locked."); const input = window.prompt("Enter 4-digit PIN to unlock:"); if (input === null) return; if (input.trim() !== PIN_CODE) return alert("Incorrect PIN."); const store = readWordsStore(); store[today] = { word, locked: false }; writeWordsStore(store); setLocked(false); alert("Unlocked. You can refresh the word again."); }
-
-// Minimal styling without external libs return ( <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4"> <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-6 border border-gray-200"> <h1 className="text-2xl font-semibold tracking-tight mb-1">Family Pickup Code</h1> <p className="text-sm text-gray-600 mb-4">Timezone: {TZ}</p>
-
-<div className="grid grid-cols-2 gap-3 mb-4">
-      <div className="col-span-2">
-        <label className="text-xs uppercase text-gray-500">Date (auto)</label>
-        <div className="mt-1 text-lg font-mono px-3 py-2 border rounded-lg bg-gray-50 select-all">{today}</div>
-      </div>
-      <div className="col-span-2">
-        <label className="text-xs uppercase text-gray-500">Today's Word</label>
-        <div className={`mt-1 text-2xl font-bold tracking-wide px-3 py-3 border rounded-lg ${locked ? "bg-green-50 border-green-300" : "bg-indigo-50 border-indigo-300"}`}>
-          {word}
-        </div>
-        <p className="text-xs text-gray-500 mt-1">{locked ? "Locked for today. Unlock with PIN to change." : "You can refresh until you lock it."}</p>
-      </div>
-    </div>
-
-    <div className="flex gap-2 mt-2">
-      <button onClick={refreshWord} disabled={locked} className={`flex-1 px-4 py-2 rounded-lg border text-sm font-medium ${locked ? "bg-gray-100 text-gray-400 border-gray-200" : "bg-gray-900 text-white border-gray-900 hover:opacity-90"}`}>
-        Refresh word
-      </button>
-      {locked ? (
-        <button onClick={unlockToday} className="px-4 py-2 rounded-lg border text-sm font-medium bg-white hover:bg-gray-50">
-          Unlock (PIN)
-        </button>
-      ) : (
-        <button onClick={lockToday} className="px-4 py-2 rounded-lg border text-sm font-medium bg-white hover:bg-gray-50">
-          Lock today (PIN)
-        </button>
-      )}
-    </div>
-
-    <div className="mt-4 p-3 rounded-lg bg-gray-50 border text-xs text-gray-600 leading-relaxed">
-      <p className="mb-1"><strong>How it works</strong></p>
-      <ul className="list-disc list-inside space-y-1">
-        <li>Date follows the Detroit timezone and updates at local midnight.</li>
-        <li>Each day has its own word and lock state stored on this device.</li>
-        <li>Lock or unlock requires the 4-digit PIN: 2587.</li>
-      </ul>
-    </div>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Family Pickup Code</title>
+  <style>
+    :root { --bg:#f5f6f7; --card:#fff; --ink:#111; --muted:#6b7280; --accent:#111; --ok:#065f46; --border:#e5e7eb; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; background: var(--bg); color: var(--ink); }
+    .wrap { min-height: 100%; display: grid; place-items: center; padding: 16px; }
+    .card { width: 100%; max-width: 520px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 6px 20px rgba(0,0,0,.06); }
+    h1 { margin: 0 0 4px; font-size: 24px; }
+    .sub { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
+    .label { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+    .field { margin-top: 4px; border: 1px solid var(--border); background: #f9fafb; padding: 10px 12px; border-radius: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 16px; }
+    .word { font-weight: 700; font-size: 24px; background: #eef2ff; border-color: #c7d2fe; }
+    .word.locked { background: #ecfdf5; border-color: #a7f3d0; }
+    .hint { margin-top: 6px; font-size: 12px; color: var(--muted); }
+    .row { display: flex; gap: 8px; margin-top: 10px; }
+    button { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--accent); color: #fff; font-weight: 600; font-size: 14px; }
+    button[disabled] { background: #e5e7eb; color: #9ca3af; border-color: #e5e7eb; }
+    .btn-plain { background: #fff; color: var(--ink); }
+    ul { margin: 10px 0 0; padding-left: 18px; }
+    li { font-size: 12px; color: var(--muted); margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="card" role="main">
+      <h1>Family Pickup Code</h1>
+      <div class="sub">Timezone: <span id="tz"></span></div><div>
+    <div class="label">Date (auto)</div>
+    <div id="date" class="field">0000-00-00</div>
   </div>
-</div>
 
-); }
+  <div style="margin-top:12px;">
+    <div class="label">Today's Word</div>
+    <div id="word" class="field word">...</div>
+    <div id="hint" class="hint">Refresh until you lock it.</div>
+  </div>
 
+  <div class="row">
+    <button id="refresh">Refresh word</button>
+    <button id="lock" class="btn-plain">Lock (PIN)</button>
+    <button id="unlock" class="btn-plain">Unlock (PIN)</button>
+  </div>
+
+  <section style="margin-top:12px; border:1px solid var(--border); background:#f9fafb; border-radius:10px; padding:10px">
+    <div class="label" style="margin-bottom:6px;">How it works</div>
+    <ul>
+      <li>Date follows America/Detroit and rolls at local midnight.</li>
+      <li>Each day stores an independent word and lock state on this device.</li>
+      <li>PIN for lock/unlock is <strong>2587</strong>.</li>
+    </ul>
+  </section>
+</main>
+
+  </div>  <script>
+    // Config
+    const PIN_CODE = "2587";
+    const TZ = "America/Detroit"; // explicit per your requirement
+    const STORE_KEY = "fpc.words"; // { [YYYY-MM-DD]: { word: string, locked: boolean } }
+
+    // Utility: current Detroit date YYYY-MM-DD
+    function detroitDateISO() {
+      const now = new Date();
+      return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+    }
+
+    // Storage helpers
+    function readStore() {
+      try { return JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch { return {}; }
+    }
+    function writeStore(obj) { localStorage.setItem(STORE_KEY, JSON.stringify(obj)); }
+
+    // Kid-friendly word generator
+    function generateWord() {
+      const A = ["sun","map","tree","blue","star","rain","cat","dog","nest","milk","book","fish","rock","sand","snow","leaf","truck","train","ball","kite","fox","owl","berry","honey","moss","mint"];
+      const B = ["berry","cake","shine","light","house","river","stone","song","cloud","spark","path","wind","wheel","field","dock","bridge","gate","trail","lane","way","patch","glow","garden","story"];
+      const a = A[Math.floor(Math.random()*A.length)];
+      const b = B[Math.floor(Math.random()*B.length)];
+      const w = a === b ? a + "go" : a + b;
+      return w.toLowerCase();
+    }
+
+    // DOM refs
+    const elTZ = document.getElementById("tz");
+    const elDate = document.getElementById("date");
+    const elWord = document.getElementById("word");
+    const elHint = document.getElementById("hint");
+    const btnRefresh = document.getElementById("refresh");
+    const btnLock = document.getElementById("lock");
+    const btnUnlock = document.getElementById("unlock");
+
+    elTZ.textContent = TZ;
+
+    let today = detroitDateISO();
+
+    function loadToday() {
+      const store = readStore();
+      if (!store[today]) {
+        store[today] = { word: generateWord(), locked: false };
+        writeStore(store);
+      }
+      const { word, locked } = store[today];
+      elDate.textContent = today;
+      elWord.textContent = word;
+      elWord.classList.toggle("locked", locked);
+      btnRefresh.disabled = !!locked;
+      elHint.textContent = locked ? "Locked for today. Unlock with PIN to change." : "Refresh until you lock it.";
+    }
+
+    // Detect Detroit midnight rollover
+    setInterval(() => {
+      const d = detroitDateISO();
+      if (d !== today) {
+        today = d;
+        loadToday();
+      }
+    }, 30000); // 30s is fine
+
+    // Actions
+    btnRefresh.addEventListener("click", () => {
+      const store = readStore();
+      const rec = store[today] || { word: generateWord(), locked: false };
+      if (rec.locked) { alert("Today's word is locked. Unlock with the PIN to change it."); return; }
+      rec.word = generateWord();
+      store[today] = rec; writeStore(store);
+      elWord.textContent = rec.word;
+    });
+
+    btnLock.addEventListener("click", () => {
+      const store = readStore();
+      const rec = store[today] || { word: generateWord(), locked: false };
+      if (rec.locked) { alert("Already locked for today."); return; }
+      const pin = prompt("Enter 4-digit PIN to lock today's word:");
+      if (pin == null) return;
+      if (pin.trim() !== PIN_CODE) { alert("Incorrect PIN."); return; }
+      rec.locked = true; store[today] = rec; writeStore(store); loadToday(); alert("Locked for today.");
+    });
+
+    btnUnlock.addEventListener("click", () => {
+      const store = readStore();
+      const rec = store[today] || { word: generateWord(), locked: false };
+      if (!rec.locked) { alert("It's not locked."); return; }
+      const pin = prompt("Enter 4-digit PIN to unlock:");
+      if (pin == null) return;
+      if (pin.trim() !== PIN_CODE) { alert("Incorrect PIN."); return; }
+      rec.locked = false; store[today] = rec; writeStore(store); loadToday(); alert("Unlocked. You can refresh the word again.");
+    });
+
+    // First paint
+    loadToday();
+  </script></body>
+</html>
