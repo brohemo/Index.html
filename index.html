@@ -27,6 +27,14 @@
     const FAMILY_NAME = "Haidar";
     const CHILDREN = ["Rana Haidar", "Issa Haidar"];
 
+    // On first load, purge any lingering keys from older builds so nothing "sticks"
+    (function purgeOldKeys(){
+      try {
+        localStorage.removeItem("fpc.familyName");
+        localStorage.removeItem("fpc.secret");
+      } catch {}
+    })();
+
     const WORDS = "acorn,anchor,apricot,archer,arrow,artist,atlas,auto,avocado,bacon,badge,bagel,baker,balcony,balloon,banana,bandit,banker,barrel,baseball,basket,battery,beacon,beaver,beetle,bell,berry,bicycle,binder,birch,bison,blizzard,blossom,bluebird,boomer,boot,botany,brick,bridge,bronco,brook,bubble,bucket,buffalo,burgers,burrow,button,cabin,cactus,cadet,cafe,cake,camel,camera,candle,cannon,canoe,canyon,caper,caramel,caravan,carbon,cardinal,carpenter,carrot,castle,cedar,cello,cereal,chair,chalice,chalk,charger,cherry,cheddar,chef,chisel,chocolate,chorus,cider,circle,citrus,clover,cloud,clutch,cobalt,cocoon,coconut,coffee,comet,copper,cornbread,corset,cottage,cotton,cougar,cousin,coyote,cradle,crayon,cricket,crimson,crystal,cub,curfew,custard,daffodil,dahlia,daisy,damper,dagger,danube,daybreak,deadline,decoy,defender,denim,desert,dew,dewdrop,diamond,diner,discus,dock,dodger,donut,dragon,drawer,driftwood,drizzle,drum,duckling,ember,engine,elm,emperor,encore,espresso,evergreen,falcon,falconer,fennel,fern,festival,fig,finch,firefly,firewood,flannel,flamingo,flax,fleece,flicker,flute,foam,forest,forge,forklift,foxglove,fragment,frame,fritter,frost,furnace,gadget,galaxy,garlic,gazelle,geyser,gingerbread,giraffe,glacier,glider,gnome,goat,goblet,goldfinch,gondola,gooseberry,granite,grapefruit,griddle,griffin,grizzly,grouper,grove,guardian,guitar,gull,gust,hammer,harbor,hardhat,harvest,hawk,haystack,hedgehog,helm,heron,hickory,hinge,hippo,honey,honeybee,hood,hoof,horchata,horse,hotdog,hotel,huckleberry,hudson,hummingbird,husk,iceberg,iguana,ink,iris,iron,ivory,jade,jasmine,jasper,jellybean,jetty,journal,juniper,kaiser,keystone,kiln,kite,kiwi,koala,lagoon,lake,lantern,lasso,lavender,ledger,lemon,lemur,lichen,lilac,lime,linen,lion,lipstick,lizard,loaf,lobster,loft,logger,lotus,luck,lupine,lynx,macaroni,mackerel,magnet,mahogany,maize,mallet,maple,marble,marmot,marsh,meadow,melon,merlin,meteor,milkshake,miner,mittens,mocha,moose,moser,moss,mouse,muffin,mustang,myrtle,nacho,nanny,nectar,nettle,nightfall,nimbus,nutmeg,oak,oasis,obelisk,octave,octopus,olive,onyx,opal,orchid,oregano,oriole,otter,owl,oyster,paddle,paint,panther,parcel,parka,parsnip,parrot,parsley,peach,peanut,pebble,pelican,pepper,pesto,petal,phoenix,pickle,picnic,pigeon,pillar,pinecone,pintos,pioneer,pistachio,plankton,plaza,plover,plume,plum,poet,polecat,pollen,polo,pond,poppy,porsche,potato,pretzel,prospect,proton,pumpkin,quartz,quill,quince,quokka,quail,quarry,quiet,quiver,radish,railcar,rainbow,raisin,ranger,raspberry,ravine,redwood,reef,relay,rhino,ribbon,river,roadrunner,robin,rocket,rodeo,rogue,rosebud,rover,rowan,rumble,rye,saddle,saffron,sage,sailor,salmon,salsa,sandbar,sandstone,sapphire,satchel,scout,scrap,seagull,sequoia,sergeant,shamrock,shanty,shepherd,shipyard,shortcake,shovel,shuttle,silo,silver,sketch,skipper,skylark,slate,sluice,smokestack,snack,snowfall,soapstone,solar,sonar,spanner,sparrow,spice,spider,spruce,spur,squash,squirrel,stable,stag,staple,starfish,starlight,stetson,stingray,stove,strawberry,stream,sturgeon,studio,stump,sunbeam,sundae,sunrise,sunset,sunspot,surf,swallow,switch,tackle,taco,talc,tarpon,teak,teal,teapot,teaspoon,temple,tender,thimble,thistle,thunder,tiger,timber,toast,toboggan,tomato,topaz,torch,tractor,trail,trellis,trout,tulip,tumble,tundra,turmeric,turtle,twitter,umbra,umpire,uranium,urn,valley,vapor,velvet,venison,vertex,vessel,viking,vineyard,violin,violet,viper,vista,vulture,waffle,walnut,walrus,warbler,watchtower,wattle,wave,weasel,weather,web,whale,wharf,wheat,whisker,whistle,whitetail,willow,windmill,winter,wombat,woodland,workbench,wren,wrangler,yacht,yam,yarrow,yeti,yoke,yonder,zephyr,zest,zinnia".split(",");
 
     // Daily code is derived from FAMILY_NAME + date (no secrets)
@@ -86,4 +94,67 @@
                   <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(formatYMD(todayLocal()))} aria-label="Set to today">Today</button>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
-                  <button className="px-3 py-2
+                  <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(shiftYMD(dateStr,-1))}>Prev</button>
+                  <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(shiftYMD(dateStr,1))}>Next</button>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div className="bg-gray-100 rounded-xl p-4 text-center">
+                    <div className="text-xs uppercase text-gray-500">6-digit</div>
+                    <div className="text-3xl font-mono font-bold tracking-widest">{code.digits}</div>
+                  </div>
+                  <div className="bg-gray-100 rounded-xl p-4 text-center">
+                    <div className="text-xs uppercase text-gray-500">Word</div>
+                    <div className="text-2xl font-semibold">{code.word}</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button className="px-3 py-2 rounded-xl border" onClick={async()=>{
+                    try{ await navigator.clipboard.writeText(shareText); setCopyMsg("Copied."); }
+                    catch{ setCopyMsg("Copy failed."); }
+                    setTimeout(()=>setCopyMsg(""),1500);
+                  }}>Copy message</button>
+                  {"share" in navigator && (
+                    <button className="px-3 py-2 rounded-xl border" onClick={()=>navigator.share({ title: `${FAMILY_NAME} Pickup Code`, text: shareText }).catch(()=>{})}>Native share</button>
+                  )}
+                  {copyMsg && <span className="text-green-600 text-sm">{copyMsg}</span>}
+                </div>
+              </div>
+
+              {/* Read-only children card */}
+              <div className="bg-white rounded-2xl shadow p-5">
+                <h2 className="text-xl font-semibold mb-3">Children</h2>
+                <ul className="list-disc pl-6 text-sm text-gray-700 space-y-2">
+                  {CHILDREN.map((c,i)=>(<li key={i}>{c}</li>))}
+                </ul>
+              </div>
+            </section>
+
+            <section className="mt-6 bg-white rounded-2xl shadow p-5">
+              <h2 className="text-xl font-semibold mb-3">Safety Tips (show to the school)</h2>
+              <ul className="list-disc pl-6 text-sm text-gray-700 space-y-2">
+                <li>Code changes daily at 12:01 AM based on the device’s local date.</li>
+                <li>School should verify the code with the parent if the pickup person is new or the kid looks unsure.</li>
+                <li>The app works offline and doesn’t send or store personal data.</li>
+              </ul>
+            </section>
+
+            <footer className="text-center text-xs text-gray-500 mt-8 pb-6">PWA · Local-only · No tracking</footer>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+
+  <script>
+    // Cache-bust the service worker so older cached HTML/JS can’t override this build
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker-v2.js?ver=2").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
