@@ -1,160 +1,70 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#111827" />
-  <title>Family Pickup Code</title>
-  <!-- CDN so we avoid builds on mobile -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    html, body, #root { height: 100%; }
-    body { margin: 0; background: #f9fafb; color: #111827; }
-    button,a { touch-action: manipulation; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <noscript>This app works offline but needs JavaScript.</noscript>
+import React, { useEffect, useMemo, useState } from "react";
 
-  <script type="text/babel">
-    const { useEffect, useState } = React;
+// Family Pickup Code App (Daily date follows America/Detroit; refreshable word; per‑day PIN lock 2587) // Notes: // - Date auto-tracks the America/Detroit calendar and rolls over at local midnight. // - You can refresh today's word any time UNTIL you lock it. Lock/unlock requires PIN 2587. // - Each day stores its own { word, locked } entry in localStorage under "fpc.words". // - Keeps things kid-friendly: generated words are short and pronounceable.
 
-    // Hard-locked family name and children (no UI to change)
-    const FAMILY_NAME = "Haidar";
-    const CHILDREN = ["Rana Haidar", "Issa Haidar"];
+const PIN_CODE = "2587"; // 4-digit code to lock/unlock const TZ = "America/Detroit";
 
-    // On first load, purge any lingering keys from older builds so nothing "sticks"
-    (function purgeOldKeys(){
-      try {
-        localStorage.removeItem("fpc.familyName");
-        localStorage.removeItem("fpc.secret");
-      } catch {}
-    })();
+function getDetroitDateISO() { // Returns YYYY-MM-DD for America/Detroit const now = new Date(); // en-CA gives ISO-style YYYY-MM-DD return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now); }
 
-    const WORDS = "acorn,anchor,apricot,archer,arrow,artist,atlas,auto,avocado,bacon,badge,bagel,baker,balcony,balloon,banana,bandit,banker,barrel,baseball,basket,battery,beacon,beaver,beetle,bell,berry,bicycle,binder,birch,bison,blizzard,blossom,bluebird,boomer,boot,botany,brick,bridge,bronco,brook,bubble,bucket,buffalo,burgers,burrow,button,cabin,cactus,cadet,cafe,cake,camel,camera,candle,cannon,canoe,canyon,caper,caramel,caravan,carbon,cardinal,carpenter,carrot,castle,cedar,cello,cereal,chair,chalice,chalk,charger,cherry,cheddar,chef,chisel,chocolate,chorus,cider,circle,citrus,clover,cloud,clutch,cobalt,cocoon,coconut,coffee,comet,copper,cornbread,corset,cottage,cotton,cougar,cousin,coyote,cradle,crayon,cricket,crimson,crystal,cub,curfew,custard,daffodil,dahlia,daisy,damper,dagger,danube,daybreak,deadline,decoy,defender,denim,desert,dew,dewdrop,diamond,diner,discus,dock,dodger,donut,dragon,drawer,driftwood,drizzle,drum,duckling,ember,engine,elm,emperor,encore,espresso,evergreen,falcon,falconer,fennel,fern,festival,fig,finch,firefly,firewood,flannel,flamingo,flax,fleece,flicker,flute,foam,forest,forge,forklift,foxglove,fragment,frame,fritter,frost,furnace,gadget,galaxy,garlic,gazelle,geyser,gingerbread,giraffe,glacier,glider,gnome,goat,goblet,goldfinch,gondola,gooseberry,granite,grapefruit,griddle,griffin,grizzly,grouper,grove,guardian,guitar,gull,gust,hammer,harbor,hardhat,harvest,hawk,haystack,hedgehog,helm,heron,hickory,hinge,hippo,honey,honeybee,hood,hoof,horchata,horse,hotdog,hotel,huckleberry,hudson,hummingbird,husk,iceberg,iguana,ink,iris,iron,ivory,jade,jasmine,jasper,jellybean,jetty,journal,juniper,kaiser,keystone,kiln,kite,kiwi,koala,lagoon,lake,lantern,lasso,lavender,ledger,lemon,lemur,lichen,lilac,lime,linen,lion,lipstick,lizard,loaf,lobster,loft,logger,lotus,luck,lupine,lynx,macaroni,mackerel,magnet,mahogany,maize,mallet,maple,marble,marmot,marsh,meadow,melon,merlin,meteor,milkshake,miner,mittens,mocha,moose,moser,moss,mouse,muffin,mustang,myrtle,nacho,nanny,nectar,nettle,nightfall,nimbus,nutmeg,oak,oasis,obelisk,octave,octopus,olive,onyx,opal,orchid,oregano,oriole,otter,owl,oyster,paddle,paint,panther,parcel,parka,parsnip,parrot,parsley,peach,peanut,pebble,pelican,pepper,pesto,petal,phoenix,pickle,picnic,pigeon,pillar,pinecone,pintos,pioneer,pistachio,plankton,plaza,plover,plume,plum,poet,polecat,pollen,polo,pond,poppy,porsche,potato,pretzel,prospect,proton,pumpkin,quartz,quill,quince,quokka,quail,quarry,quiet,quiver,radish,railcar,rainbow,raisin,ranger,raspberry,ravine,redwood,reef,relay,rhino,ribbon,river,roadrunner,robin,rocket,rodeo,rogue,rosebud,rover,rowan,rumble,rye,saddle,saffron,sage,sailor,salmon,salsa,sandbar,sandstone,sapphire,satchel,scout,scrap,seagull,sequoia,sergeant,shamrock,shanty,shepherd,shipyard,shortcake,shovel,shuttle,silo,silver,sketch,skipper,skylark,slate,sluice,smokestack,snack,snowfall,soapstone,solar,sonar,spanner,sparrow,spice,spider,spruce,spur,squash,squirrel,stable,stag,staple,starfish,starlight,stetson,stingray,stove,strawberry,stream,sturgeon,studio,stump,sunbeam,sundae,sunrise,sunset,sunspot,surf,swallow,switch,tackle,taco,talc,tarpon,teak,teal,teapot,teaspoon,temple,tender,thimble,thistle,thunder,tiger,timber,toast,toboggan,tomato,topaz,torch,tractor,trail,trellis,trout,tulip,tumble,tundra,turmeric,turtle,twitter,umbra,umpire,uranium,urn,valley,vapor,velvet,venison,vertex,vessel,viking,vineyard,violin,violet,viper,vista,vulture,waffle,walnut,walrus,warbler,watchtower,wattle,wave,weasel,weather,web,whale,wharf,wheat,whisker,whistle,whitetail,willow,windmill,winter,wombat,woodland,workbench,wren,wrangler,yacht,yam,yarrow,yeti,yoke,yonder,zephyr,zest,zinnia".split(",");
+function readWordsStore() { try { return JSON.parse(localStorage.getItem("fpc.words") || "{}"); } catch { return {}; } }
 
-    // Daily code is derived from FAMILY_NAME + date (no secrets)
-    async function generateDailyCode(familyName, ymd) {
-      const enc = new TextEncoder();
-      const keyData = enc.encode(familyName.toLowerCase());
-      const key = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-      const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(ymd)));
-      const offset = sig[sig.length - 1] & 0x0f;
-      const p = (sig[offset] & 0x7f) << 24 | (sig[offset+1] & 0xff) << 16 | (sig[offset+2] & 0xff) << 8 | (sig[offset+3] & 0xff);
-      const digits = String(p % 1_000_000).padStart(6, "0");
-      const wOffset = (sig[0] ^ sig[5] ^ sig[13]) & 0x0f;
-      const wp = (sig[wOffset] & 0x7f) << 24 | (sig[wOffset+1] & 0xff) << 16 | (sig[wOffset+2] & 0xff) << 8 | (sig[wOffset+3] & 0xff);
-      const wordIndex = wp % WORDS.length;
-      return { digits, word: WORDS[wordIndex] ?? "error" };
-    }
+function writeWordsStore(store) { localStorage.setItem("fpc.words", JSON.stringify(store)); }
 
-    function todayLocal(){ const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate()); }
-    function formatYMD(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,"0"); const day=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${day}`; }
-    function shiftYMD(ymd, off){ const [y,m,d]=ymd.split("-").map(n=>parseInt(n,10)); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+off); return formatYMD(dt); }
+// Simple, memorable word generator for kids function generateWord() { const partsA = ["sun", "map", "tree", "blue", "star", "rain", "cat", "dog", "nest", "milk", "book", "fish", "rock", "sand", "snow", "leaf", "truck", "train", "ball", "kite"]; const partsB = ["berry", "cake", "shine", "light", "house", "river", "stone", "song", "cloud", "spark", "path", "wind", "wheel", "field", "dock", "bridge", "gate", "trail", "lane", "way"]; const a = partsA[Math.floor(Math.random() * partsA.length)]; const b = partsB[Math.floor(Math.random() * partsB.length)]; // collapse accidental duplicates like "tree-tree" const w = (a === b ? a + "go" : a + b); return w.toLowerCase(); }
 
-    function App(){
-      // keep contacts in case you want them later; UI is omitted here
-      const getLS=(k,d)=>{ try{ const v=localStorage.getItem(k); return v==null?d:v; }catch{return d;} };
-      const [dateStr,setDateStr]=useState(()=>formatYMD(todayLocal()));
-      const [contacts,setContacts]=useState(()=>{ try{ const raw=getLS("fpc.contacts","[]"); const arr=JSON.parse(raw); return Array.isArray(arr) ? arr : []; }catch{return [];} });
-      const [copyMsg,setCopyMsg]=useState("");
-      const [code,setCode]=useState({digits:"------", word:"…"});
+export default function FamilyPickupCodeApp() { const [today, setToday] = useState(getDetroitDateISO()); const [word, setWord] = useState("..."); const [locked, setLocked] = useState(false);
 
-      useEffect(()=>{ try{ localStorage.setItem("fpc.contacts", JSON.stringify(contacts)); }catch{} }, [contacts]);
+// Load today's record on mount and when date changes useEffect(() => { const store = readWordsStore(); if (!store[today]) { store[today] = { word: generateWord(), locked: false }; writeWordsStore(store); } setWord(store[today].word); setLocked(store[today].locked); }, [today]);
 
-      useEffect(()=>{
-        let cancelled=false;
-        (async()=>{
-          const c=await generateDailyCode(FAMILY_NAME, dateStr);
-          if(!cancelled) setCode(c);
-        })();
-        return ()=>{cancelled=true;};
-      }, [dateStr]);
+// Tick every 30s to detect Detroit midnight rollover useEffect(() => { const id = setInterval(() => { const detroit = getDetroitDateISO(); if (detroit !== today) setToday(detroit); }, 30_000); return () => clearInterval(id); }, [today]);
 
-      const shareText = `${FAMILY_NAME} pickup code for ${dateStr}: ${code.digits} (${code.word}).\nShow this to school staff if asked.\nIf unsure, call the parent before releasing.`;
+function refreshWord() { if (locked) return alert("Today's word is locked. Unlock with the PIN to change it."); const store = readWordsStore(); const next = generateWord(); store[today] = { word: next, locked: false }; writeWordsStore(store); setWord(next); }
 
-      return (
-        <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
-          <div className="max-w-3xl mx-auto">
-            <header className="mb-6">
-              <h1 className="text-3xl font-bold tracking-tight">Family Pickup Code</h1>
-              <p className="text-sm text-gray-600">Daily code based on family name. No server. Works offline.</p>
-            </header>
+function lockToday() { if (locked) return alert("Already locked for today."); const input = window.prompt("Enter 4-digit PIN to lock today's word:"); if (input === null) return; // cancelled if (input.trim() !== PIN_CODE) return alert("Incorrect PIN."); const store = readWordsStore(); store[today] = { word, locked: true }; writeWordsStore(store); setLocked(true); alert("Locked for today."); }
 
-            <section className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl shadow p-5">
-                <h2 className="text-xl font-semibold mb-3">Today’s Code</h2>
-                <div className="flex items-center gap-3 mb-2">
-                  <label className="sr-only" htmlFor="date">Date</label>
-                  <input id="date" className="w-full border rounded-xl px-3 py-2" value={dateStr} type="date" onChange={e=>setDateStr(e.target.value)} />
-                  <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(formatYMD(todayLocal()))} aria-label="Set to today">Today</button>
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(shiftYMD(dateStr,-1))}>Prev</button>
-                  <button className="px-3 py-2 rounded-xl border" onClick={()=>setDateStr(shiftYMD(dateStr,1))}>Next</button>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div className="bg-gray-100 rounded-xl p-4 text-center">
-                    <div className="text-xs uppercase text-gray-500">6-digit</div>
-                    <div className="text-3xl font-mono font-bold tracking-widest">{code.digits}</div>
-                  </div>
-                  <div className="bg-gray-100 rounded-xl p-4 text-center">
-                    <div className="text-xs uppercase text-gray-500">Word</div>
-                    <div className="text-2xl font-semibold">{code.word}</div>
-                  </div>
-                </div>
+function unlockToday() { if (!locked) return alert("It's not locked."); const input = window.prompt("Enter 4-digit PIN to unlock:"); if (input === null) return; if (input.trim() !== PIN_CODE) return alert("Incorrect PIN."); const store = readWordsStore(); store[today] = { word, locked: false }; writeWordsStore(store); setLocked(false); alert("Unlocked. You can refresh the word again."); }
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button className="px-3 py-2 rounded-xl border" onClick={async()=>{
-                    try{ await navigator.clipboard.writeText(shareText); setCopyMsg("Copied."); }
-                    catch{ setCopyMsg("Copy failed."); }
-                    setTimeout(()=>setCopyMsg(""),1500);
-                  }}>Copy message</button>
-                  {"share" in navigator && (
-                    <button className="px-3 py-2 rounded-xl border" onClick={()=>navigator.share({ title: `${FAMILY_NAME} Pickup Code`, text: shareText }).catch(()=>{})}>Native share</button>
-                  )}
-                  {copyMsg && <span className="text-green-600 text-sm">{copyMsg}</span>}
-                </div>
-              </div>
+// Minimal styling without external libs return ( <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4"> <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-6 border border-gray-200"> <h1 className="text-2xl font-semibold tracking-tight mb-1">Family Pickup Code</h1> <p className="text-sm text-gray-600 mb-4">Timezone: {TZ}</p>
 
-              {/* Read-only children card */}
-              <div className="bg-white rounded-2xl shadow p-5">
-                <h2 className="text-xl font-semibold mb-3">Children</h2>
-                <ul className="list-disc pl-6 text-sm text-gray-700 space-y-2">
-                  {CHILDREN.map((c,i)=>(<li key={i}>{c}</li>))}
-                </ul>
-              </div>
-            </section>
-
-            <section className="mt-6 bg-white rounded-2xl shadow p-5">
-              <h2 className="text-xl font-semibold mb-3">Safety Tips (show to the school)</h2>
-              <ul className="list-disc pl-6 text-sm text-gray-700 space-y-2">
-                <li>Code changes daily at 12:01 AM based on the device’s local date.</li>
-                <li>School should verify the code with the parent if the pickup person is new or the kid looks unsure.</li>
-                <li>The app works offline and doesn’t send or store personal data.</li>
-              </ul>
-            </section>
-
-            <footer className="text-center text-xs text-gray-500 mt-8 pb-6">PWA · Local-only · No tracking</footer>
-          </div>
+<div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="col-span-2">
+        <label className="text-xs uppercase text-gray-500">Date (auto)</label>
+        <div className="mt-1 text-lg font-mono px-3 py-2 border rounded-lg bg-gray-50 select-all">{today}</div>
+      </div>
+      <div className="col-span-2">
+        <label className="text-xs uppercase text-gray-500">Today's Word</label>
+        <div className={`mt-1 text-2xl font-bold tracking-wide px-3 py-3 border rounded-lg ${locked ? "bg-green-50 border-green-300" : "bg-indigo-50 border-indigo-300"}`}>
+          {word}
         </div>
-      );
-    }
+        <p className="text-xs text-gray-500 mt-1">{locked ? "Locked for today. Unlock with PIN to change." : "You can refresh until you lock it."}</p>
+      </div>
+    </div>
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+    <div className="flex gap-2 mt-2">
+      <button onClick={refreshWord} disabled={locked} className={`flex-1 px-4 py-2 rounded-lg border text-sm font-medium ${locked ? "bg-gray-100 text-gray-400 border-gray-200" : "bg-gray-900 text-white border-gray-900 hover:opacity-90"}`}>
+        Refresh word
+      </button>
+      {locked ? (
+        <button onClick={unlockToday} className="px-4 py-2 rounded-lg border text-sm font-medium bg-white hover:bg-gray-50">
+          Unlock (PIN)
+        </button>
+      ) : (
+        <button onClick={lockToday} className="px-4 py-2 rounded-lg border text-sm font-medium bg-white hover:bg-gray-50">
+          Lock today (PIN)
+        </button>
+      )}
+    </div>
 
-  <script>
-    // Cache-bust the service worker so older cached HTML/JS can’t override this build
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker-v2.js?ver=2").catch(() => {});
-      });
-    }
-  </script>
-</body>
-</html>
+    <div className="mt-4 p-3 rounded-lg bg-gray-50 border text-xs text-gray-600 leading-relaxed">
+      <p className="mb-1"><strong>How it works</strong></p>
+      <ul className="list-disc list-inside space-y-1">
+        <li>Date follows the Detroit timezone and updates at local midnight.</li>
+        <li>Each day has its own word and lock state stored on this device.</li>
+        <li>Lock or unlock requires the 4-digit PIN: 2587.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+); }
+
