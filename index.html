@@ -52,30 +52,25 @@
     <ul>
       <li>Date follows America/Detroit and rolls at local midnight.</li>
       <li>Each day stores an independent word and lock state on this device.</li>
-      <li>PIN for lock/unlock is <strong>2587</strong>.</li>
     </ul>
   </section>
 </main>
 
   </div>  <script>
-    // Config
     const PIN_CODE = "2587";
-    const TZ = "America/Detroit"; // explicit per your requirement
-    const STORE_KEY = "fpc.words"; // { [YYYY-MM-DD]: { word: string, locked: boolean } }
+    const TZ = "America/Detroit";
+    const STORE_KEY = "fpc.words";
 
-    // Utility: current Detroit date YYYY-MM-DD
     function detroitDateISO() {
       const now = new Date();
       return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
     }
 
-    // Storage helpers
     function readStore() {
       try { return JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch { return {}; }
     }
     function writeStore(obj) { localStorage.setItem(STORE_KEY, JSON.stringify(obj)); }
 
-    // Kid-friendly word generator
     function generateWord() {
       const A = ["sun","map","tree","blue","star","rain","cat","dog","nest","milk","book","fish","rock","sand","snow","leaf","truck","train","ball","kite","fox","owl","berry","honey","moss","mint"];
       const B = ["berry","cake","shine","light","house","river","stone","song","cloud","spark","path","wind","wheel","field","dock","bridge","gate","trail","lane","way","patch","glow","garden","story"];
@@ -85,7 +80,6 @@
       return w.toLowerCase();
     }
 
-    // DOM refs
     const elTZ = document.getElementById("tz");
     const elDate = document.getElementById("date");
     const elWord = document.getElementById("word");
@@ -112,16 +106,14 @@
       elHint.textContent = locked ? "Locked for today. Unlock with PIN to change." : "Refresh until you lock it.";
     }
 
-    // Detect Detroit midnight rollover
     setInterval(() => {
       const d = detroitDateISO();
       if (d !== today) {
         today = d;
         loadToday();
       }
-    }, 30000); // 30s is fine
+    }, 30000);
 
-    // Actions
     btnRefresh.addEventListener("click", () => {
       const store = readStore();
       const rec = store[today] || { word: generateWord(), locked: false };
@@ -151,7 +143,6 @@
       rec.locked = false; store[today] = rec; writeStore(store); loadToday(); alert("Unlocked. You can refresh the word again.");
     });
 
-    // First paint
     loadToday();
   </script></body>
 </html>
